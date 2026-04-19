@@ -1,0 +1,71 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: mvn clean package
+
+      - name: Docker Build
+        run: docker build -t myapp:${{ github.run_number }} .
+
+      - name: Push Image
+        run: docker push myapp:${{ github.run_number }}
+
+      - name: Deploy to K8s
+        run: kubectl apply -f deployment.yaml
+
+
+
+Breaking it down:
+
+actions/ — the organization name on GitHub (github.com/actions)
+checkout — the repository/action name
+@v4 — the version tag
+
+------------------
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/example/app.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t myapp:${BUILD_NUMBER} .'
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                sh 'docker push myapp:${BUILD_NUMBER}'
+            }
+        }
+
+        stage('Deploy to K8s') {
+            steps {
+                sh 'kubectl apply -f deployment.yaml'
+            }
+        }
+    }
+}
