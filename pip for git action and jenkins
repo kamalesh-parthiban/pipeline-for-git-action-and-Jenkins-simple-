@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline      // name can be anything you want. It's just a label that shows in GitHub Actions UI.
 
 on:
   push:
