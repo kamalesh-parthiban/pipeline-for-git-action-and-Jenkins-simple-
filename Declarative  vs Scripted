@@ -1,0 +1,64 @@
+Declarative = Jenkins controls the structure. Scripted = You control the structure.
+
+Who writes the skeleton?
+
+// Declarative — Jenkins gives you the skeleton, you fill it in
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                sh 'mvn package'   // you only write this
+            }
+        }
+    }
+}
+
+// Scripted — you write everything yourself
+node {
+    stage('Build') {
+        sh 'mvn package'           // you write this + all the structure
+    }
+}
+--------------------------------------------------------------------------------
+How do you define variables?
+
+// Declarative — inside environment block
+environment {
+    APP_NAME = "my-app"
+    VERSION  = "1.0"
+}
+
+// Scripted — like normal Groovy variables
+def APP_NAME = "my-app"
+def VERSION  = "1.0"
+--------------------------------------------------------------------------------------
+How do you handle errors?
+
+// Declarative — Jenkins provides post block
+post {
+    success { echo "done" }
+    failure { echo "failed" }
+    always  { cleanWs() }
+}
+
+// Scripted — you write it like normal programming
+try {
+    sh 'mvn package'
+} catch(Exception e) {
+    echo "failed"
+} finally {
+    cleanWs()
+}
+-----------------------------------------------------------------------
+That’s the Only 
+Difference
+|                    | Declarative     | Scripted          |
+| ------------------ | --------------- | ----------------- |
+| **Language**       | Groovy          | Groovy            |
+| **Syntax**         | Fixed blocks    | Free code         |
+| **Error handling** | post { }        | try/catch/finally |
+| **Variables**      | environment { } | def var = "value" |
+| **Flexibility**    | Less            | More              |
+| **Readability**    | More            | Less              |
+| **Recommended**    | Yes             | Only when needed  |
