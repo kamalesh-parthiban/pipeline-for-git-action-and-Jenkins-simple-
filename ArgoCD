@@ -127,8 +127,26 @@ GitHub Actions = deploys ONCE and stops watching ❌
 ArgoCD = deploys AND watches forever ✅
          Git is ALWAYS source of truth
 
+-----------------------------------------
+Here is our complete roadmap:
+
+Phase 1 → Install ArgoCD on EKS
+Phase 2 → Access ArgoCD UI
+Phase 3 → Connect Git repo
+Phase 4 → Deploy sample app
+Phase 5 → See GitOps in action (auto sync)
+Phase 6 → ArgoCD with Helm
+Phase 7 → App of Apps pattern (advanced)
 
 
+Phase 1: Install ArgoCD
+Step 1 — Create ArgoCD namespace:
+
+kubectl create namespace argocd
+
+Step 2 — Install ArgoCD:
+
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 
 
