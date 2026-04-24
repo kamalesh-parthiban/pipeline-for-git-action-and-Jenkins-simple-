@@ -1,0 +1,141 @@
+One Line Interview Answer
+
+"ArgoCD is a GitOps continuous delivery tool for Kubernetes that automatically syncs your cluster state with what is defined in your Git repository"
+
+How ArgoCD Works
+
+Git Repo                    Kubernetes Cluster
+────────                    ──────────────────
+Deployment.yaml      →      ArgoCD watches Git
+Service.yaml         →      compares with cluster
+Ingress.yaml         →      finds differences
+        ↓                           ↓
+developer pushes        ArgoCD detects change
+new version             auto applies to cluster
+        ↓                           ↓
+Git updated ✅          cluster updated ✅
+
+ArgoCD vs Jenkins
+
+Jenkins                         ArgoCD
+───────                         ──────
+push based                      pull based
+Jenkins pushes to cluster       ArgoCD pulls from Git
+CI + CD together                CD only
+runs on trigger                 always watching
+no drift detection              detects drift ✅
+pipeline script                 declarative YAML
+general purpose                 kubernetes specific
+
+What is Drift Detection
+
+Drift = cluster state differs from Git
+
+Example:
+  Git says: replicas: 3
+  Someone manually changes to replicas: 1
+        ↓
+  ArgoCD detects drift
+        ↓
+  Status: OutOfSync ⚠️
+        ↓
+  Auto sync → fixes back to 3 ✅
+  Manual sync → you decide when to fix
+
+-----------------------------------------
+
+GitHub Actions CAN do the same — but there is a fundamental difference:
+
+How GitHub Actions deploys:
+
+Developer pushes code
+        ↓
+GitHub Actions triggers
+        ↓
+Runs kubectl apply    ← PUSHES to cluster
+        ↓
+Done — forgets about it ❌
+No more watching ❌
+
+--------------------------
+How ArgoCD deploys:
+
+Developer pushes code
+        ↓
+ArgoCD detects Git change
+        ↓
+Pulls and applies     ← PULLS from Git
+        ↓
+Keeps watching forever ✅
+Compares Git vs Cluster continuously ✅
+
+---------------
+The BIG difference — drift detection:
+
+Someone runs:
+kubectl edit deployment my-app
+changes replicas 3 → 1 manually
+
+GitHub Actions:
+  Has no idea ❌
+  Never detects it ❌
+  Cluster stays wrong ❌
+
+ArgoCD:
+  Detects immediately ✅
+  Git says 3 replicas
+  Cluster has 1 replica
+  OutOfSync! ⚠️
+  Auto reverts to 3 ✅
+
+
+Push based vs Pull based:
+
++-------------------+---------------------------+------------------------------+
+|                   | GitHub Actions            | ArgoCD                       |
++-------------------+---------------------------+------------------------------+
+| Type              | Push based                | Pull based                   |
+| Deploys by        | Running kubectl apply     | Pulling from Git             |
+| After deploy      | Forgets ✗                 | Keeps watching ✓             |
+| Drift detection   | ✗ No                      | ✓ Yes                        |
+| Auto heal         | ✗ No                      | ✓ Yes                        |
+| Rollback          | Re-run pipeline           | Git revert or UI click       |
+| Cluster access    | Needs kubeconfig in GitHub| ArgoCD inside cluster        |
+| Security          | kubeconfig exposed ⚠      | No external access needed ✓  |
++-------------------+---------------------------+------------------------------+
+
+
+Security difference:
+
+GitHub Actions:
+  Needs AWS credentials ⚠️
+  Needs kubeconfig ⚠️
+  Stored in GitHub secrets
+  External system accessing cluster ⚠️
+
+ArgoCD:
+  Lives INSIDE cluster ✅
+  Pulls from Git — no inbound access
+  No credentials outside cluster ✅
+  More secure ✅
+
+
+Real difference in one line:
+
+GitHub Actions = deploys ONCE and stops watching ❌
+
+ArgoCD = deploys AND watches forever ✅
+         Git is ALWAYS source of truth
+
+
+
+
+
+
+
+
+
+
+
+
+
