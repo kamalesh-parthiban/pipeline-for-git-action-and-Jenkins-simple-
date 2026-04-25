@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4                   // actions/checkout@v4 clones your current repository into the GitHub Actions runner so all your code files are available for next steps! ✅
 
       - name: Build
         run: mvn clean package
