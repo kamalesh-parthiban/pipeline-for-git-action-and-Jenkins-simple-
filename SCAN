@@ -1,5 +1,10 @@
 Your company vs basic setup:
 
+Source code  → SonarQube + Checkmarx ✅
+pom.xml      → Snyk ✅
+Docker image → Sysdig ✅
+Unit tests   → Maven ✅
+
 +-------------+----------------+---------------------------+
 | Tool        | Basic setup    | Your company              |
 +-------------+----------------+---------------------------+
