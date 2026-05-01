@@ -5,6 +5,15 @@ pom.xml      → Snyk ✅
 Docker image → Sysdig ✅
 Unit tests   → Maven ✅
 
++---------------+--------------------------+--------------------------------------------------------------+
+| Asset         | Tool                     | What it scans                                                |
++---------------+--------------------------+--------------------------------------------------------------+
+| Source code   | SonarQube + Checkmarx   | Your custom code — bugs, code smells, SAST vulnerabilities   |
+| pom.xml       | Snyk                    | Your dependencies/libraries — third-party packages with CVEs |
+| Docker image  | Sysdig                  | Your container — OS packages, runtime vulnerabilities        |
+| Unit tests    | Maven                   | Your test execution — functional correctness                 |
++---------------+--------------------------+--------------------------------------------------------------+
+
 +-------------+----------------+---------------------------+
 | Tool        | Basic setup    | Your company              |
 +-------------+----------------+---------------------------+
