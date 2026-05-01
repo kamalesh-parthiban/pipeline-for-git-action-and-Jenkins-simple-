@@ -60,3 +60,178 @@ Over time, this approach helped us reduce critical vulnerabilities by over 40% a
 
 Not every critical CVE requires the same urgency. I assess exploitability, reachability in the code path, and whether a fix is available before prioritizing remediation. This prevents teams from burning time on theoretical risks while real ones wait.
 My overall goal is to make security invisible to developers — automated, fast, and actionable — so it becomes part of the development habit rather than a separate firefighting exercise at the end."
+---------
+
+CVE stands for Common Vulnerabilities and Exposures. -- in our pom.xml
+
+A CVE is a unique ID given to a known security vulnerability.
+
+👉 Think of it like:
+
+“Tracking number for a security bug”
+
+Example
+
+CVE-2021-44228
+
+This refers to the famous Log4j vulnerability (Log4Shell).
+
+Breakdown of CVE ID
+
+CVE-2021-44228
+│    │     │
+│    │     └── Unique number
+│    └──────── Year discovered
+└───────────── CVE identifier
+
+Why CVEs are important
+Standard way to identify vulnerabilities
+
+Used by tools like:
+Snyk
+Trivy
+Sysdig
+
+Helps teams:
+Track issues
+Prioritize fixes
+Search solutions easily
+
+Real-world example
+
+Library: log4j 2.14
+Issue: CVE-2021-44228
+Severity: Critical
+Fix: Upgrade to 2.17+
+
+-----------
+Real CVE Examples with Solutions:
+
+------------------------------------------------------------
+1) CVE-2021-44228 (Log4Shell)
+------------------------------------------------------------
+Issue:
+- Remote Code Execution in Apache Log4j
+
+Impact:
+- Attacker can run code on server
+
+Solution:
+- Upgrade Log4j to 2.17+
+- Disable JNDI lookups (temporary fix)
+- Restrict outbound network access if needed
+
+------------------------------------------------------------
+2) CVE-2022-22965 (Spring4Shell)
+------------------------------------------------------------
+Issue:
+- Remote Code Execution in Spring Framework
+
+Impact:
+- Full application compromise
+
+Solution:
+- Upgrade Spring Framework
+- Restrict data binding
+- Use WAF rules (temporary)
+
+------------------------------------------------------------
+3) CVE-2014-0160 (Heartbleed)
+------------------------------------------------------------
+Issue:
+- OpenSSL memory leak
+
+Impact:
+- Exposes passwords, keys, sensitive data
+
+Solution:
+- Patch OpenSSL
+- Rotate SSL certificates
+- Reset user passwords
+
+------------------------------------------------------------
+4) CVE-2014-6271 (Shellshock)
+------------------------------------------------------------
+Issue:
+- Bash executes malicious environment variables
+
+Impact:
+- Remote command execution
+
+Solution:
+- Patch Bash
+- Restrict CGI scripts
+- Sanitize inputs
+
+------------------------------------------------------------
+5) CVE-2016-5195 (Dirty COW)
+------------------------------------------------------------
+Issue:
+- Linux privilege escalation
+
+Impact:
+- Normal user becomes root
+
+Solution:
+- Update Linux kernel
+- Limit unnecessary user access
+
+------------------------------------------------------------
+6) CVE-2017-0144 (EternalBlue)
+------------------------------------------------------------
+Issue:
+- SMB vulnerability (used in WannaCry)
+
+Impact:
+- Remote exploitation, ransomware spread
+
+Solution:
+- Apply Microsoft patch
+- Disable SMBv1
+- Block port 445 if not needed
+
+------------------------------------------------------------
+7) CVE-2018-1002105 (Kubernetes API)
+------------------------------------------------------------
+Issue:
+- Privilege escalation in Kubernetes
+
+Impact:
+- Unauthorized cluster access
+
+Solution:
+- Upgrade Kubernetes
+- Apply RBAC rules
+- Restrict API access
+
+------------------------------------------------------------
+8) CVE-2019-5736 (Docker runC)
+------------------------------------------------------------
+Issue:
+- Container escape vulnerability
+
+Impact:
+- Access host from container
+
+Solution:
+- Update Docker / runC
+- Avoid running containers as root
+- Use AppArmor / SELinux
+
+------------------------------------------------------------
+Common Fix Pattern:
+------------------------------------------------------------
+1. Upgrade vulnerable version
+2. Apply security patch
+3. Change configuration
+4. Restrict access (network/IAM)
+
+------------------------------------------------------------
+Interview Answer:
+------------------------------------------------------------
+“In real projects, we commonly see CVEs like Log4Shell, Spring4Shell,
+and container vulnerabilities. We fix them by upgrading libraries,
+patching base images, or applying configuration changes. In CI/CD,
+we enforce security gates to block deployments if critical
+vulnerabilities are detected.”
+------------------------------------------------------------
