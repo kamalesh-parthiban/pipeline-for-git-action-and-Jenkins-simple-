@@ -1,0 +1,30 @@
+Your company vs basic setup:
+
++-------------+----------------+---------------------------+
+| Tool        | Basic setup    | Your company              |
++-------------+----------------+---------------------------+
+| Code scan   | SonarQube      | SonarQube + Checkmarx     |
+| Dependency  | Trivy          | Snyk                      |
+| Image build | Dockerfile     | Kpack                     |
+| Image scan  | Trivy          | Sysdig                    |
+| Reports     | Logs only      | HTML reports              |
+| Run scans   | Sequential     | Parallel ✓                |
++-------------+----------------+---------------------------+
+
+SonarQube  → your code quality ✅
+Snyk       → your libraries ✅
+Checkmarx  → your code security ✅
+Sysdig     → your Docker image ✅
+Kpack      → builds secure image ✅
+Maven      → your app works ✅
+
++-------------+--------------+--------------------------------------------------------------+
+| Tool        | Scan Type    | Scans What                                                   |
++-------------+--------------+--------------------------------------------------------------+
+| SonarQube   | SAST         | Source code — bugs, code quality, vulnerabilities            |
+| Snyk        | SCA + SAST   | Open source libraries (pom.xml) — CVEs, license issues       |
+| Checkmarx   | SAST         | Source code — deep security vulnerabilities                  |
+| Sysdig      | Image scan   | Docker image in ECR — OS vulnerabilities, runtime threats    |
+| Kpack       | Image builder| Builds image — auto applies OS security patches              |
+| Maven test  | Unit test    | Your application code — functional testing                   |
++-------------+--------------+--------------------------------------------------------------+
