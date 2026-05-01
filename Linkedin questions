@@ -1,3 +1,5 @@
+What kind of security scans you will do on what applications?
+
 Your company vs basic setup:
 
 Source code  → SonarQube + Checkmarx ✅
@@ -234,4 +236,55 @@ and container vulnerabilities. We fix them by upgrading libraries,
 patching base images, or applying configuration changes. In CI/CD,
 we enforce security gates to block deployments if critical
 vulnerabilities are detected.”
+------------------------------------------------------------
+
+What kind of pipelines you are using while setting up Jenkins like can you give an example of any pipeline you have set up?
+
+Types of Jenkins Pipelines
+
+1. Declarative Pipeline  ← most common ✅
+2. Scripted Pipeline     ← older way
+3. Multibranch Pipeline  ← multiple branches
+
+"I use Declarative Pipelines in Jenkins. Let me walk you through a real pipeline I set up for a Java Spring Boot application that deploys to AWS EKS."
+
+Stage 1 - Checkout:
+  "Pull latest code from GitHub
+   main branch automatically"
+
+Stage 2 - Build:
+  "Maven compiles Java code
+   creates JAR file
+   archives as Jenkins artifact"
+
+Stage 3 - Test:
+  "Runs JUnit tests
+   publishes test reports
+   pipeline fails if tests fail"
+
+Stage 4 - Docker Build:
+  "Creates Docker image
+   tags with build number
+   also tags as latest"
+
+Stage 5 - Push to ECR:
+  "Authenticates with AWS
+   creates ECR repo if not exists
+   pushes both tags to ECR"
+
+Stage 6 - Update Kubeconfig:
+  "Connects Jenkins to EKS
+   verifies nodes are running"
+
+Stage 7 - Deploy to EKS:
+  "Replaces IMAGE_PLACEHOLDER
+   applies Deployment.yaml
+   waits for rollout
+   verifies pods running"
+
+Post actions:
+  "Cleans Docker images
+   cleans workspace
+   always runs regardless
+   of success or failure"
 ------------------------------------------------------------
