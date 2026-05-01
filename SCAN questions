@@ -42,3 +42,21 @@ Maven      → your app works ✅
 | Kpack       | Image builder| Builds image — auto applies OS security patches              |
 | Maven test  | Unit test    | Your application code — functional testing                   |
 +-------------+--------------+--------------------------------------------------------------+
+
+---------------------------------------------
+Have you received any vulnerability scans when you are running security scans like what are the ones you have experienced in your day-to-day activities?
+
+"Yes, security scanning is a core part of our CI/CD pipeline, and I'm actively involved in both integrating the tools and acting on the findings.
+We use SonarQube and Checkmarx for SAST, Snyk for dependency scanning, and Trivy/Sysdig for container image scanning. Each tool targets a different layer — source code, libraries, and infrastructure — giving us comprehensive coverage.
+
+On the dependency side, one of the most impactful cases I handled was when Snyk flagged Log4j 2.14 as critical (CVE-2021-44228) in our pom.xml. I immediately raised it with the team, coordinated an upgrade to version 2.17, and simultaneously added a quality gate rule to block any future critical CVEs from being merged. That single process change prevented similar issues from reaching production.
+
+On the code side, SonarQube regularly catches issues like hardcoded secrets, SQL injection risks, and missing input validation. My role is to triage these findings, separate true positives from false positives, and work with developers to remediate them. For false positives, I use SonarQube's 'Won't Fix' tagging with a documented justification, so auditors have full traceability.
+
+On the container side, Sysdig and Trivy often reveal OS-level CVEs in outdated base images. For example, we had an old Ubuntu 18.04 base image flagged with multiple high-severity vulnerabilities. We rebuilt using Ubuntu 22.04 LTS and enforced a policy to always use official, regularly patched base images going forward.
+
+From a DevOps perspective, my core responsibility is making security seamless in the pipeline. I configure quality gates that fail builds automatically for high or critical issues, ensuring nothing bypasses review. I also maintain dashboards for visibility across teams so developers, leads, and security stakeholders all have a shared view of our risk posture.
+Over time, this approach helped us reduce critical vulnerabilities by over 40% across two quarters — not by slowing down delivery, but by catching issues earlier when they're cheapest to fix.
+
+Not every critical CVE requires the same urgency. I assess exploitability, reachability in the code path, and whether a fix is available before prioritizing remediation. This prevents teams from burning time on theoretical risks while real ones wait.
+My overall goal is to make security invisible to developers — automated, fast, and actionable — so it becomes part of the development habit rather than a separate firefighting exercise at the end."
