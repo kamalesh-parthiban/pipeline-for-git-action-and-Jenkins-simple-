@@ -1,0 +1,75 @@
+SonarQube
+Scans Java source code for code quality issues — bugs, code smells, duplication, and test coverage. Focuses more on maintainability than security.
+
+Snyk SCA
+Scans pom.xml and the full transitive dependency tree for known CVEs in open source libraries. Catches third-party risk — vulnerable versions of libs you're using.
+
+Snyk SAST
+Scans your Java source code for security vulnerabilities like SQL injection, hardcoded secrets, and insecure deserialization. Catches first-party risk — bugs in code you wrote.
+
+Sysdig
+Scans the built OCI container image sitting in ECR for vulnerabilities. Catches issues that only appear at the image/runtime level — OS packages, base image CVEs — not visible in source code.
+
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/example/app.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Run Scans') {
+            parallel {
+                stage('SonarQube Scan') {
+                    steps {
+                        sonarQubeScan()
+                    }
+                }
+                stage('Snyk Scan') {
+                    steps {
+                        // SCA — scan pom.xml + dependency tree
+                        sh 'snyk test --all-projects'
+                        // SAST — scan Java source code
+                        sh 'snyk code test'
+                    }
+                    post {
+                        always {
+                            // Publish HTML SCA/SAST report
+                            publishHTML(target: [
+                                reportName: 'Snyk Report',
+                                reportDir: 'snyk-reports',
+                                reportFiles: 'index.html'
+                            ])
+                        }
+                    }
+                }
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t myapp:${BUILD_NUMBER} .'
+            }
+        }
+        stage('Push Image') {
+            steps {
+                sh 'docker push myapp:${BUILD_NUMBER}'
+            }
+        }
+        stage('Sysdig Image Scan') {
+            steps {
+                // Scans OCI image in ECR for vulnerabilities
+                sysdigImageScan imageName: "myapp:${BUILD_NUMBER}"
+            }
+        }
+        stage('Deploy to K8s') {
+            steps {
+                sh 'kubectl apply -f deployment.yaml'
+            }
+        }
+    }
+}
