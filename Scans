@@ -1,10 +1,10 @@
 SonarQube
 Scans Java source code for code quality issues — bugs, code smells, duplication, and test coverage. Focuses more on maintainability than security.
 
-Snyk SCA
+Snyk SCA -  Software Composition Analysis
 Scans pom.xml and the full transitive dependency tree for known CVEs in open source libraries. Catches third-party risk — vulnerable versions of libs you're using.
 
-Snyk SAST
+Snyk SAST - Static Application Security Testing
 Scans your Java source code for security vulnerabilities like SQL injection, hardcoded secrets, and insecure deserialization. Catches first-party risk — bugs in code you wrote.
 
 Sysdig
