@@ -1,0 +1,115 @@
+once if there is a build problem, so that's the first step. So when you are creating the build using Maven, build is not successful, then what is your debugging?
+
+Error 1 — Compilation error:
+
+[ERROR] COMPILATION ERROR
+[ERROR] src/main/java/App.java:[10,5] 
+        cannot find symbol
+
+Means:
+→ Code has syntax error
+→ Missing import
+→ Wrong method name
+→ Developer code issue
+→ Not your problem as DevOps
+→ Tell developer to fix code ✅
+
+Error 2 — Dependency not found:
+
+[ERROR] Could not resolve dependencies
+[ERROR] Could not find artifact
+        com.example:library:jar:1.0.0
+
+Means:
+→ Maven cant download dependency
+→ Check internet connection
+→ Check Maven repository
+→ Check pom.xml version correct
+
+Fix:
+# Check pom.xml
+cat pom.xml | grep dependency
+
+# Clear Maven cache and retry
+rm -rf ~/.m2/repository
+mvn clean install
+
+Error 3 — Repository not reachable:
+
+[ERROR] Failed to connect to repository
+[ERROR] Connection refused to
+        https://repo.maven.apache.org
+
+Means:
+→ No internet access
+→ Proxy issue
+→ Nexus/Artifactory down
+
+Fix:
+# Check internet
+curl https://repo.maven.apache.org
+
+# Check proxy settings
+cat ~/.m2/settings.xml
+
+# Check Nexus is running
+curl http://nexus.company.com:8081
+
+Error 6 — Plugin not found:
+
+[ERROR] Plugin org.apache.maven.plugins:
+        maven-compiler-plugin:3.8.1
+        not found
+
+Fix:
+# Clear plugin cache
+rm -rf ~/.m2/repository/org/apache/maven
+mvn clean install
+
+Error 7 — Wrong Java version:
+
+[ERROR] Source option 5 is no longer
+        supported. Use 6 or later.
+
+Means:
+→ Java version mismatch
+→ pom.xml says Java 11
+→ Server has Java 8
+
+Fix:
+# Check Java version
+java -version
+
+# Check what pom.xml requires
+cat pom.xml | grep java.version
+
+# Install correct Java version
+sudo dnf install java-11-amazon-corretto
+
+Full debugging flow:
+
+mvn clean install fails
+        │
+        ▼
+Read error message carefully
+        │
+        ▼
+Identify error type:
+├── Compilation  → developer fix
+├── Dependency   → clear cache/check repo
+├── Repository   → check network/Nexus
+├── Test failure → skip or fix test
+├── Memory       → increase heap
+├── Plugin       → clear cache
+└── Java version → install correct JDK
+        │
+        ▼
+Apply fix
+        │
+        ▼
+Run again:
+mvn clean install
+        │
+        ▼
+BUILD SUCCESS ✅
+------------------------------------------------------------------------------------------
