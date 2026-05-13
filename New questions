@@ -113,3 +113,160 @@ mvn clean install
         ▼
 BUILD SUCCESS ✅
 ------------------------------------------------------------------------------------------
+How do you secure secrets in CI/CD pipelines?
+
+Never do this:
+
+# WRONG ❌
+pipeline {
+    environment {
+        DB_PASSWORD = "mypassword123"  ← hardcoded
+        API_KEY     = "sk-1234567890"  ← in plain text
+    }
+}
+
+Problems:
+├── Visible in Git history    ❌
+├── Anyone can read it        ❌
+├── Logs expose it            ❌
+└── Security breach risk      ❌
+---
+Method 1 — Jenkins Credentials Store:
+
+Jenkins Console:
+Manage Jenkins
+→ Credentials
+→ System
+→ Global credentials
+→ Add Credentials
+
+Type     → Secret text
+Secret   → mypassword123
+ID       → db-password
+--------
+// Use in Jenkinsfile
+pipeline {
+    environment {
+        DB_PASSWORD = credentials('db-password')
+    }
+    stages {
+        stage('Deploy') {
+            steps {
+                sh 'echo $DB_PASSWORD'
+                // prints *** in logs ✅
+                // never exposed ✅
+            }
+        }
+    }
+}
+--
+For AWS Access Key and Secret Key:
+
+Manage Jenkins
+→ Credentials
+→ System
+→ Global credentials
+→ Add Credentials
+
+Kind     → AWS Credentials  ← select this
+ID       → aws-credentials
+Access Key ID     → AKIAIOSFODNN7EXAMPLE
+Secret Access Key → wJalrXUtnFEMI/K7MDENG
+
+Use in Jenkinsfile:
+
+pipeline {
+    stages {
+        stage('Deploy to AWS') {
+            steps {
+                withAWS(credentials: 'aws-credentials',
+                        region: 'us-east-2') {
+                    sh 'aws s3 ls'
+                    sh 'aws ec2 describe-instances'
+                }
+            }
+        }
+    }
+}
+----------------------------------------------------
+Method 2 — AWS Secrets Manager:
+
+Store secrets in AWS:
+AWS Console
+→ Secrets Manager
+→ Store a new secret
+→ Key/Value:
+   DB_PASSWORD = mypassword123
+   API_KEY     = sk-1234567890
+→ Name: prod/myapp/secrets
+
+--
+// Fetch in pipeline
+pipeline {
+    stages {
+        stage('Get Secrets') {
+            steps {
+                script {
+                    def secret = sh(
+                        script: """
+                            aws secretsmanager get-secret-value \
+                            --secret-id prod/myapp/secrets \
+                            --query SecretString \
+                            --output text
+                        """,
+                        returnStdout: true
+                    ).trim()
+                    // use secret
+                }
+            }
+        }
+    }
+}
+
+-------------------------------------------------------------------------------------
+Method 6 — HashiCorp Vault (enterprise):
+
+Vault stores all secrets centrally
+Pipeline fetches at runtime
+Secrets auto-rotate
+Full audit trail
+
+# In pipeline
+vault kv get secret/myapp/db-password
+-------------------------
+Comparison table:
+
+Method              Best for
+─────────────────────────────────────
+Jenkins Credentials → Jenkins pipelines
+AWS Secrets Manager → AWS services, rotation
+AWS Parameter Store → Simple key/value, cheaper
+Kubernetes Secrets  → EKS workloads
+HashiCorp Vault     → Enterprise, multi-cloud
+Environment vars    → Never for production ❌
+----------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
