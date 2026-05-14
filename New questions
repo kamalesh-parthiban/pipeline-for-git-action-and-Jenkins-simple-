@@ -244,8 +244,87 @@ AWS Parameter Store → Simple key/value, cheaper
 Kubernetes Secrets  → EKS workloads
 HashiCorp Vault     → Enterprise, multi-cloud
 Environment vars    → Never for production ❌
-----------------------------------------------------------------------------------------------------------
+--------------------------------------------------
+For Github Actions
+--------------------------------------------------------
+GitHub Secrets — built in:
 
+Where to store:
+
+Go to GitHub
+Your Repository
+        │
+        ▼
+Settings tab
+        │
+        ▼
+Left side → Secrets and variables
+        │
+        ▼
+Actions
+        │
+        ▼
+New repository secret
+
+Name   → AWS_ACCESS_KEY_ID
+Value  → AKIAIOSFODNN7EXAMPLE
+Click  → Add secret
+----------------------------------
+Three levels of secrets:
+
+Repository secrets:
+→ Only for that one repo
+→ Settings → Secrets → Actions
+
+Organization secrets:
+→ Share across multiple repos
+→ Organization Settings → Secrets
+
+Environment secrets:
+→ Different secrets per environment
+→ Settings → Environments → dev/staging/prod
+---------------------------------------
+All types of secrets you can store:
+
+AWS keys:
+├── AWS_ACCESS_KEY_ID      ✅
+├── AWS_SECRET_ACCESS_KEY  ✅
+└── AWS_REGION             ✅
+
+Docker:
+├── DOCKER_USERNAME        ✅
+└── DOCKER_PASSWORD        ✅
+
+Database:
+├── DB_HOST                ✅
+├── DB_PASSWORD            ✅
+└── DB_NAME                ✅
+
+API keys:
+├── SONAR_TOKEN            ✅
+├── SLACK_WEBHOOK          ✅
+└── ANTHROPIC_API_KEY      ✅
+
+SSH:
+└── SSH_PRIVATE_KEY        ✅
+----------------------------------
+# OIDC approach
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write    ← needed for OIDC
+      contents: read
+
+    steps:
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::123456:role/github-role
+          aws-region: us-east-2
+          # No keys needed ✅
+----------------------------------------------------------------------
 
 
 
