@@ -326,6 +326,22 @@ jobs:
           # No keys needed ✅
 ----------------------------------------------------------------------
 
+How do you debug a failed CI/CD pipeline in GitLab? What are the first things you check?**
+
+Full debugging checklist:
+
+Step 1 → Read error message carefully
+Step 2 → Identify which stage failed
+Step 3 → Check exit code
+Step 4 → Check job logs fully
+Step 5 → Check variables/secrets set
+Step 6 → Check runner is online
+Step 7 → Check docker image correct
+Step 8 → Validate yml syntax
+Step 9 → Check permissions/credentials
+Step 10→ Retry or run manually
+---------------------------------------------------------------------
+
 
 
 
