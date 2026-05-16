@@ -1,0 +1,101 @@
+Think of it like:
+
+CodePipeline = Manager
+               coordinates everything
+               tells who does what
+
+CodeBuild    = Builder
+               compiles code
+               runs tests
+               creates artifact
+
+CodeDeploy   = Deployer
+               takes artifact
+               deploys to EC2/EKS/Lambda
+---
+Full flow:
+
+Developer pushes code to Git
+        │
+        ▼
+CodePipeline triggers    ← orchestrator
+        │
+        ▼
+CodeBuild runs           ← builder
+├── mvn clean install
+├── run unit tests
+├── build docker image
+└── push to ECR
+        │
+        ▼
+CodeDeploy deploys       ← deployer
+├── pull from ECR
+├── deploy to EC2
+├── deploy to EKS
+└── deploy to Lambda
+
+---
+
+CodePipeline — Orchestrator:
+
+What it does:
+├── Connects all stages together
+├── Source → Build → Test → Deploy
+├── Triggers automatically on code push
+└── Manages the entire workflow
+
+Example stages:
+Stage 1 → Source    (CodeCommit/GitHub)
+Stage 2 → Build     (CodeBuild)
+Stage 3 → Test      (CodeBuild)
+Stage 4 → Deploy    (CodeDeploy)
+Stage 5 → Approval  (manual gate)
+Stage 6 → Prod Deploy (CodeDeploy)
+------------------
+
+CodeBuild — Builder:
+
+What it does:
+├── Compiles source code
+├── Runs unit tests
+├── Creates build artifacts
+├── Builds Docker images
+└── Pushes to ECR/S3
+
+Config file → buildspec.yml:
+version: 0.2
+phases:
+  install:
+    commands:
+      - pip install -r requirements.txt
+  build:
+    commands:
+      - mvn clean install
+      - docker build -t myapp .
+  post_build:
+    commands:
+      - docker push myapp:latest
+-------------
+
+CodeDeploy — Deployer:
+
+What it does:
+├── Deploys to EC2 instances
+├── Deploys to ECS/EKS
+├── Deploys to Lambda
+├── Rolling deployments
+├── Blue/Green deployments
+└── Automatic rollback on failure
+
+Config file → appspec.yml:
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /var/www/myapp
+hooks:
+  AfterInstall:
+    - location: scripts/restart.sh
+  ValidateService:
+    - location: scripts/health-check.sh
+-------------------------------------------------
