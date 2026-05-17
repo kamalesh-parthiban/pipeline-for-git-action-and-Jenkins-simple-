@@ -112,3 +112,8 @@ phases:
       - docker push myapp:$CODEBUILD_BUILD_NUMBER
       - echo "Deploying to K8s..."
       - kubectl apply -f deployment.yaml
+
+artifacts:
+  files:
+    - target/myapp.jar
+    - Deployment.yaml
