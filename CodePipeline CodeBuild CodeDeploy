@@ -1,3 +1,9 @@
+"CodePipeline orchestrates the entire CI/CD workflow,
+CodeBuild handles compilation testing and Docker image creation,
+CodeDeploy handles the actual deployment to EC2, EKS or Lambda with
+rolling or blue/green strategies"
+
+
 Think of it like:
 
 CodePipeline = Manager
