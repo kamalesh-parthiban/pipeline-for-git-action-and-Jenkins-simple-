@@ -169,7 +169,249 @@ curl http://<EXTERNAL-IP>/
 curl http://<EXTERNAL-IP>/health
 # UP ✅
 
+-----------------
+TO deploy using code deploy
 
+Start with these steps:
 
+Step 1 → Add appspec.yml to repo
+Step 2 → Add scripts/deploy.sh to repo
+Step 3 → Update buildspec.yml
+Step 4 → Create CodeDeploy application
+Step 5 → Create deployment group
+Step 6 → Install CodeDeploy agent on EC2
+Step 7 → Update pipeline add deploy stage
+--------------------------------
+Now update CodePipeline — add Deploy stage:
+-------------------------------
+Go to CodePipeline
+Click → your pipeline (aws-pipeline)
+Click → Edit
+        │
+        ▼
+Click → Add Stage
+        after Build stage
 
+Stage name → Deploy
+        │
+        ▼
+Add action group:
+Action name    → DeployToEKS
+Action provider→ AWS CodeDeploy
+Input artifact → BuildArtifact
+Application    → create new (next step)
+Deployment group → create new (next step)
+--------------------------------
 
+Create CodeDeploy Application:
+--------------------------
+Go to CodeDeploy Console
+Click → Create application
+
+Application name → aws-pipeline-app
+Compute platform → EC2/On-premises
+                   ↑
+                   for EKS we use this
+                   with our deploy script
+Click → Create application
+-------------------------------------------------
+
+Create Deployment Group:
+------------------------
+
+Click → Create deployment group
+
+Group name      → eks-deployment-group
+Service role    → create new role with CodeDeploy permissions
+Deployment type → In-place
+Environment     → EC2 instances
+                  Tag: Name = codedeploy-agent-server
+
+Deployment settings → CodeDeployDefault.AllAtOnce
+Load balancer       → uncheck
+Click → Create deployment group
+--
+
+Important note:
+
+CodeDeploy for EKS needs
+an EC2 instance with:
+├── CodeDeploy agent installed
+├── kubectl installed
+├── AWS CLI installed
+└── Access to EKS cluster
+
+This EC2 acts as deployment runner
+---------
+
+Install CodeDeploy agent on EC2:
+
+# SSH into EC2
+sudo yum update -y
+sudo yum install ruby wget -y
+
+# Download agent
+wget https://aws-codedeploy-us-east-2.s3.amazonaws.com/latest/install
+chmod +x install
+sudo ./install auto
+
+# Start agent
+sudo systemctl start codedeploy-agent
+sudo systemctl enable codedeploy-agent
+
+# Verify
+sudo systemctl status codedeploy-agent
+---
+
+Your repo structure should be:
+
+AWS-Pipeline/
+├── buildspec.yml        ← updated ✅
+├── appspec.yml          ← new ✅
+├── Deployment.yaml      ← existing ✅
+├── scripts/
+│   └── deploy.sh        ← new ✅
+├── src/
+└── pom.xml
+
+Full pipeline flow:
+
+GitHub push
+    │
+    ▼
+CodePipeline triggers
+    │
+    ▼
+Stage 1: Source
+→ pulls code from GitHub ✅
+    │
+    ▼
+Stage 2: Build (CodeBuild)
+→ mvn build ✅
+→ mvn test ✅
+→ docker build ✅
+→ push to ECR ✅
+→ creates artifacts ✅
+    │
+    ▼
+Stage 3: Deploy (CodeDeploy)
+→ picks up artifacts ✅
+→ runs appspec.yml ✅
+→ runs scripts/deploy.sh ✅
+→ kubectl apply ✅
+→ pods running ✅
+
+------------------------------------
+code build use its own linux to do the job right why code deploy not using like that?
+
+CodeBuild — has its own environment:
+
+CodeBuild:
+→ AWS spins up fresh container
+→ runs your buildspec.yml
+→ container destroyed after build
+→ no server needed ✅
+
+You don't manage anything
+AWS handles the environment
+
+----
+
+CodeDeploy — works differently:
+
+CodeDeploy:
+→ does NOT have its own environment
+→ needs a TARGET to deploy TO
+→ it just coordinates the deployment
+
+CodeDeploy is a COORDINATOR
+not an EXECUTOR like CodeBuild
+
+What CodeDeploy needs as target:
+
+Target options:
+├── EC2 instances    ✅ most common
+├── On-premises      ✅
+├── ECS              ✅ native support
+├── Lambda           ✅ native support
+└── EKS              ❌ not native
+                        that is why we need EC2
+                        with kubectl
+
+Why ECS works but EKS does not:
+
+ECS + CodeDeploy:
+→ AWS made them work together
+→ native integration ✅
+→ no extra setup needed
+
+EKS + CodeDeploy:
+→ no native integration ❌
+→ need workaround
+→ use EC2 with CodeDeploy agent
+→ agent runs kubectl commands
+----------------------------------------------------------------------
+You need to tell CodeDeploy which EC2 to deploy to using Tags.
+
+Not automatic — you specify using Tags:
+
+CodeDeploy does NOT
+automatically pick any EC2
+
+You tell it:
+"deploy to EC2 instances
+ that have this tag"
+
+----
+
+Step 1 — Tag your EC2 instance:
+
+Go to EC2 Console
+Click your instance
+Tags tab
+Add tag:
+Key   → Name
+Value → codedeploy-server
+
+--
+
+Step 2 — Deployment Group uses that tag:
+
+CodeDeploy
+→ Create Deployment Group
+→ Environment configuration
+→ EC2 instances
+→ Tag group:
+   Key   → Name
+   Value → codedeploy-server
+           ↑
+           CodeDeploy finds EC2
+           with this tag
+           and deploys there
+------------
+Visual:
+
+CodeDeploy Deployment Group
+        │
+        │ looks for tag
+        │ Name = codedeploy-server
+        ▼
+Finds matching EC2 instances:
+├── EC2-1 (Name=codedeploy-server) ✅ deploy here
+├── EC2-2 (Name=web-server)        ❌ skip
+└── EC2-3 (Name=codedeploy-server) ✅ deploy here
+
+---
+
+Multiple servers same tag:
+
+10 EC2 instances all tagged:
+Name = codedeploy-server
+        │
+        ▼
+CodeDeploy deploys to ALL 10
+automatically ✅
+
+No need to mention each server
+Just use same tag ✅
+--------------------------------------------------------
