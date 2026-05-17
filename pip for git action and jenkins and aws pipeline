@@ -84,7 +84,7 @@ phases:
   # ─────────────────────────────────────────
   install:
     runtime-versions:
-      java: corretto17
+      java: corretto17          //  ← Install Java 17 (Amazon Corretto) needed for Maven to build JAR
     commands:
       - echo "Installing kubectl..."
       - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
