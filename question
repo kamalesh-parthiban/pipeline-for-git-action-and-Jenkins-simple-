@@ -1,0 +1,81 @@
+When do we use Snapshot version and Release version?
+
+It Depends on Your pom.xml Version
+
+<!-- If pom.xml has this -->
+<version>1.0.0-SNAPSHOT</version>
+→ produces SNAPSHOT artifact
+
+<!-- If pom.xml has this -->
+<version>1.0.0</version>
+→ produces RELEASE artifact
+--------------------------------
+
+mvn clean package
+
+# Step 1 — clean
+# Deletes target/ folder  ← removes old builds
+
+# Step 2 — compile
+# Compiles .java files → .class files
+
+# Step 3 — test
+# Runs unit tests
+
+# Step 4 — package
+# Packages everything → target/myapp-1.0.0-SNAPSHOT.jar
+
+-----------------------------------------
+Output Artifact
+
+target/
+└── myapp-1.0.0-SNAPSHOT.jar   ← if SNAPSHOT in pom.xml
+└── myapp-1.0.0.jar            ← if RELEASE in pom.xml
+
+-----------------------------------------
+mvn clean package  →  doesn't decide SNAPSHOT or RELEASE
+pom.xml version    →  decides SNAPSHOT or RELEASE ✅
+-----------------------------------------------------
+In Your DevOps Pipeline Context
+
+Developer pushes code → Git (source code versioning)
+Maven builds code     → produces SNAPSHOT or RELEASE artifact
+Docker packages it    → tags image as latest or v1.0.0
+Kubernetes deploys it → pulls specific image tag
+--------------------------------------------------
+CI pipeline builds SNAPSHOT  →  for dev/test environments
+CI pipeline builds RELEASE   →  for production deployment
+
+Never deploy SNAPSHOT to production ⚠️
+Always deploy RELEASE to production ✅
+----------------------------------------------
+SNAPSHOT  =  still in development  (unstable, changes frequently)
+RELEASE   =  ready for production  (stable, never changes)
+-----------------------------------------------
+SNAPSHOT Version
+
+<version>1.0.0-SNAPSHOT</version>
+
+Work in progress
+Can change anytime
+Every build may be different
+Used during development phase
+Maven always downloads latest copy
+
+Day 1 → 1.0.0-SNAPSHOT (has login feature)
+Day 2 → 1.0.0-SNAPSHOT (added payment feature)  ← same version, different code
+Day 3 → 1.0.0-SNAPSHOT (fixed auth bug)          ← same version, different code
+----------------------------------------
+RELEASE Version
+
+<version>1.0.0</version>
+
+Development complete
+Code is frozen — never changes
+Used in production
+Maven downloads once and caches forever
+
+1.0.0  → always same code, forever ✅
+1.1.0  → new release with new features
+1.2.0  → another release
+----------------------------------------------
