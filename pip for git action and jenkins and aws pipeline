@@ -117,3 +117,32 @@ artifacts:
   files:
     - target/myapp.jar
     - Deployment.yaml
+--------------
+version: 0.2
+
+phases
+
+install:
+  runtime-versions:
+    java: 17
+  commands:
+    - echo "insall kubectl"
+    - curl -LO "https://k8s/kubectl"
+    - chmod +x kubectl && mv kubectl /usr/local/bin
+
+pre_build:
+  commands:
+    - echo "Building JAR..."
+    - mvn clean package
+
+build:
+  command:
+    - echo "Building Docker image..."
+    - docker build -t myapp:$CODEBUID_BUILD_NUMBER .
+
+post_build:
+  command:
+    - echo "Pushing Docker image..."
+    - docker push myapp:$CODEBUID_BUILD_NUMBER
+    - echo "Deploying to K8s..."
+    - kubectl apply -f deployment.yml
