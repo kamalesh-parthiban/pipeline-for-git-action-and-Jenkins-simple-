@@ -62,3 +62,55 @@ Difference
 | **Flexibility**    | Less            | More              |
 | **Readability**    | More            | Less              |
 | **Recommended**    | Yes             | Only when needed  |
+-------------------------------------------------------------------
+Simple reason — Declarative is safer and easier for teams.
+
+1. Readability — Anyone can understand:
+groovy
+
+// Declarative — even non-Jenkins person understands ✅
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+    }
+}
+
+// Scripted — looks like random Groovy code ❌
+node {
+    def mvnHome = tool 'Maven'
+    env.PATH = "${mvnHome}/bin:${env.PATH}"
+    try {
+        stage('Build') {
+            sh 'mvn clean package'
+        }
+    } catch(err) {
+        throw err
+    }
+}
+
+2. Built-in error handling:
+
+// Declarative — post block handles everything cleanly
+post {
+    success { echo "Build passed" }
+    failure { echo "Build failed" }
+    always  { cleanWs() }
+}
+
+// Scripted — you write try/catch everywhere manually
+try {
+    // build
+} catch(err) {
+    // handle
+} finally {
+    // cleanup
+}
+
+-----------------------
+Declarative is recommended because it has fixed structure that anyone can read and maintain, built-in post block for error handling, and Jenkins validates syntax before execution. 
+Scripted is only used when complex logic like dynamic stages or loops is needed. ✅
