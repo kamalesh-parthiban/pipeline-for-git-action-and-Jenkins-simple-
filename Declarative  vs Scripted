@@ -114,3 +114,31 @@ try {
 -----------------------
 Declarative is recommended because it has fixed structure that anyone can read and maintain, built-in post block for error handling, and Jenkins validates syntax before execution. 
 Scripted is only used when complex logic like dynamic stages or loops is needed. ✅
+-----------------------
+
+We don't have to choose between Declarative and Scripted — we use script{} block inside Declarative pipeline when complex logic like loops or dynamic variables is needed. 
+This gives best of both worlds — clean structure with flexible logic. ✅
+
+You don't have to choose one or the other — you can mix both!
+
+when you need loops, use Scripted inside Declarative using script {} block.
+
+Example — Build multiple Docker images loop:
+
+pipeline {
+    agent any
+    stages {
+        stage('Build Images') {
+            steps {
+                script {
+                    def services = ['auth-service', 'payment-service', 'order-service']
+                    
+                    for (service in services) {
+                        sh "docker build -t ${service}:${BUILD_NUMBER} ./${service}"
+                        sh "docker push ${service}:${BUILD_NUMBER}"
+                    }
+                }
+            }
+        }
+    }
+}
