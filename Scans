@@ -1,5 +1,18 @@
-SonarQube
+SonarQube SAST (SonarQube primarily does SAST — not full SCA.)
 Scans Java source code for code quality issues — bugs, code smells, duplication, and test coverage. Focuses more on maintainability than security.
+
+SonarQube SAST vs Snyk SAST
+
+Feature            | SonarQube                 | Snyk
+-------------------|---------------------------|----------------
+Primary focus      | Code quality + security   | Security only
+Code smells        | Yes                       | No
+Bug detection      | Yes                       | Limited
+Security rules     | Good                      | Better
+CVE mapping        | No                        | Yes
+Fix suggestions    | Basic                     | Detailed
+IDE plugin         | Yes                       | Yes
+License            | Free + paid               | Paid
 
 Snyk SCA -  Software Composition Analysis
 Scans pom.xml and the full transitive dependency tree for known CVEs in open source libraries. Catches third-party risk — vulnerable versions of libs you're using.
