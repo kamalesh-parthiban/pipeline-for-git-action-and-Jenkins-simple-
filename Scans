@@ -73,3 +73,47 @@ pipeline {
         }
     }
 }
+-----------------------------------------------------------------
+
+Composition = what your application is made of (dependencies/libraries).
+
+What composition means in software:
+
+Your Java Spring Boot app
+        ↓
+composed of:
+├── spring-boot 3.1.0
+├── log4j 2.14.0        ← vulnerable ❌
+├── jackson 2.13.0
+├── postgresql 42.3.0   ← vulnerable ❌
+├── guava 31.0
+└── commons-io 2.11.0
+
+What Snyk SCA does:
+
+Scans your pom.xml / package.json / requirements.txt
+        ↓
+Finds all dependencies (composition)
+        ↓
+Checks against vulnerability database (CVE)
+        ↓
+Reports:
+→ log4j 2.14.0 → CVE-2021-44228 (Log4Shell) ❌
+→ postgresql 42.3.0 → CVE-2022-21724 ❌
+        ↓
+Suggests fix:
+→ upgrade log4j to 2.17.1 ✅
+------------------------------------------------
+
+postgresql 42.3.0 CVE:
+
+postgresql JDBC driver 42.3.0
+        ↓
+CVE-2022-21724
+        ↓
+SQL Injection vulnerability
+        ↓
+Attacker can execute arbitrary SQL ❌
+        ↓
+Fix → upgrade to 42.3.2 or higher ✅
+------------------------------------------------------------
