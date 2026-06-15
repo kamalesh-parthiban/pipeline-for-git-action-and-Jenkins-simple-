@@ -1,0 +1,16 @@
+CI:
+  automatically build
+  and test code
+  when developer pushes ✅
+
+Continuous Delivery:
+  automatically prepare
+  release ready package
+  but MANUAL approval
+  to deploy to prod ✅
+
+Continuous Deployment:
+  automatically deploy
+  to production
+  NO manual approval
+  fully automated ✅
