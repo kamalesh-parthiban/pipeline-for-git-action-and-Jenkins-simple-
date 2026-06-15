@@ -25,3 +25,20 @@ Continuous Deployment
      automatically
      no human needed
 ━━━━━━━━━━━━━━━━━━━━━━
+---------------------------------
+
+Code push
+    ↓
+CI:
+  Build JAR ✅
+  Run tests ✅
+  Docker build ✅
+  Push to ECR ✅
+    ↓
+CD (Continuous Delivery):
+  Auto deploy to DEV ✅
+  Auto deploy to UAT ✅
+    ↓
+  Manual Approval ← human clicks
+    ↓
+  Deploy to PROD ✅
