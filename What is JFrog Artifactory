@@ -1,0 +1,72 @@
+JFrog = Universal Artifact Repository
+        stores ALL types of artifacts
+        in ONE place ✅
+
+What JFrog Stores
+
+✅ JAR files        → Java artifacts (Maven)
+✅ Docker images    → container images
+✅ npm packages     → Node.js
+✅ Python packages  → pip
+✅ Helm charts      → Kubernetes
+✅ zip/tar files    → generic artifacts
+✅ rpm/deb          → Linux packages
+✅ Go modules       → Golang
+
+JFrog in CI/CD Pipeline
+
+Stage 1: Checkout
+Stage 2: Build          → creates JAR ✅
+Stage 3: Test
+Stage 4: SonarQube
+Stage 5: Push to JFrog  → store JAR ✅
+Stage 6: Docker Build   → uses JAR from JFrog ✅
+Stage 7: Push Docker    → store image in JFrog ✅
+Stage 8: Deploy
+
+JFrog vs ECR vs Nexus
+
+JFrog Artifactory:
+  ✅ universal (all types)
+  ✅ Docker images
+  ✅ JAR files
+  ✅ Helm charts
+  ✅ enterprise grade
+  ✅ paid (expensive)
+
+AWS ECR:
+  ✅ Docker images only
+  ✅ AWS native
+  ✅ cheap
+  ❌ only Docker
+
+Nexus Repository:
+  ✅ universal (all types)
+  ✅ free open source
+  ✅ similar to JFrog
+  ❌ less features than JFrog
+
+Jenkins + JFrog Example
+
+stage('Push to JFrog') {
+    steps {
+        // Push JAR to JFrog
+        sh """
+            curl -u admin:password \
+            -T target/myapp.jar \
+            "https://myjfrog.jfrog.io/artifactory/libs-release/myapp/1.0/myapp.jar"
+        """
+    }
+}
+
+stage('Push Docker to JFrog') {
+    steps {
+        sh """
+            docker tag myapp:${BUILD_NUMBER} \
+            myjfrog.jfrog.io/docker/myapp:${BUILD_NUMBER}
+
+            docker push \
+            myjfrog.jfrog.io/docker/myapp:${BUILD_NUMBER}
+        """
+    }
+}
