@@ -1,0 +1,1032 @@
+git 
+
+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
+
+sudo dnf update -y
+
+Step 2 — Install Java (Jenkins needs Java):
+
+# Install Java 17
+sudo dnf install java-17-amazon-corretto -y
+
+# Verify
+java -version
+
+Step 3 — Add Jenkins repository:
+
+# Add Jenkins repo
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+
+# Import Jenkins GPG key
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+Step 4 — Install Jenkins:
+
+sudo dnf install jenkins -y
+
+
+Step 5 — Start and enable Jenkins:
+
+# Start Jenkins
+sudo systemctl start jenkins
+
+# Enable on boot
+sudo systemctl enable jenkins
+
+# Check status
+sudo systemctl status jenkins
+
+Step 6 — Open port 8080 (if EC2):
+
+# Check firewall locally
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --reload
+
+Also go to AWS Console:
+
+EC2 → Security Groups → Inbound Rules
+→ Add Rule
+→ Type: Custom TCP
+→ Port: 8080
+→ Source: 0.0.0.0/0
+
+[root@ip-172-31-33-50 ~]# cat /var/lib/jenkins/secrets/initialAdminPassword
+1d8fcf2b56db42d4ae99752fbf8d186e
+
+
+username
+Kamalesh
+
+password
+Darknight@123Da
+
+Email
+kamaleshparthiban0612@gmail.com
+
+
+Full name
+
+Kamalesh Parthiban
+
+http://3.19.66.226:8080/
+
+tmpfs            tmpfs     459M  4.8M  454M   2% /tmp
+
+vi /etc/fstab
+
+tmpfs   /tmp   tmpfs   defaults,size=5G   0   0
+
+sudo mount -o remount /tmp
+
+lsblk
+df -hT /tmp
+
+tmpfs            tmpfs     5.0G  4.8M  5.0G   1% /tmp
+---------------------------
+Install mvn
+
+sudo yum install maven -y
+mvn --version
+
+Step 1: Get JAVA_HOME Path
+
+echo $(dirname $(dirname $(readlink -f $(which java))))
+# Note down this path
+
+It will likely be:
+
+/usr/lib/jvm/java-17-amazon-corretto.x86_64
+
+
+Step 2: Configure Jenkins Global Tools
+Add Maven
+
+Manage Jenkins → Tools
+Maven installations → Add Maven
+
+Name → Maven-3.9
+Uncheck ❌ Install automatically
+MAVEN_HOME → /usr/share/maven
+
+Add JDK
+
+JDK installations → Add JDK
+
+Name → JDK-17
+Uncheck ❌ Install automatically
+JAVA_HOME → /usr/lib/jvm/java-17-amazon-corretto.x86_64
+
+
+Click Save
+
+Click Save
+
+
+---------------------------
+install docker
+
+# Install Docker
+yum install -y docker
+
+# Start and enable Docker
+systemctl start docker
+systemctl enable docker
+
+# Add jenkins user to docker group
+usermod -aG docker jenkins
+
+# Restart Jenkins
+systemctl restart jenkins
+
+# Verify
+docker --version
+sudo -u jenkins docker ps
+
+
+
+Verify it worked:
+
+
+groups jenkins
+# Should show: jenkins : jenkins docker
+
+------------------------------
+Project 
+
+Checkout → Build JAR → Test → Docker Build → Push to ECR ✅
+
+🚀 Next Steps — Run the Jenkins Pipeline
+Step 1: Create Pipeline Job in Jenkins
+
+Jenkins → New Item
+Name it pipeline
+Select Pipeline → Click OK
+Under Pipeline section:
+
+Definition → Pipeline script from SCM
+SCM → Git
+URL → https://github.com/kamalesh-parthiban/pipeline.git
+Branch → main
+Script Path → Jenkinsfile
+
+
+Click Save
+
+create ECR repo name pipeline in AWS
+
+in Jenkins file
+
+AWS_REGION       = "us-east-2"
+AWS_ACCOUNT_ID   = "987654321012"
+ECR_REPO_NAME    = "pipeline"
+AWS_CRED         = "aws-credentials-id"
+
+AWS_CRED 
+
+AWS Console → IAM → Users
+Step 1: Create/Select a User
+
+Go to AWS Console → IAM → Users
+Click Create user (or select existing)
+Username: jenkins-user
+Click Next
+
+Step 2: Attach Permission
+
+Select Attach policies directly
+Search and attach: AmazonEC2ContainerRegistryFullAccess
+Click Next → Create user
+
+Step 3: Generate Access Keys
+
+Click on the user → Security credentials tab
+Scroll down → Access keys → Click Create access key
+Use case: Application running outside AWS
+Click Next → Create access key
+Copy both:
+
+Access Key ID
+Secret Access Key
+
+
+You don't see AWS Credentials option — that means the plugin is not installed.
+Install the Plugin first:
+
+Manage Jenkins → Plugins → Available plugins
+Search: AWS Credentials
+Install it → Restart Jenkins
+
+Steps:
+Manage Jenkins → Credentials → Global → Add Credentials
+
+Kind: AWS Credentials
+ID: aws-credentials-id  ← this is what goes in your Jenkinsfile
+Access Key ID: your existing access key
+Secret Access Key: your existing secret key
+Click Save
+
+The ID can be anything, but it must exactly match your Jenkinsfile:
+
+AWS_CRED = "aws-credentials-id"   // must match the ID you set in Jenkins
+
+
+So if you set ID as my-aws-creds in Jenkins, update Jenkinsfile too:
+
+AWS_CRED = "my-aws-creds"
+
+
+
+To deploy in k8s
+
+kubectl is not installed on your Jenkins server. Let's fix it:
+
+All commands to run together:
+
+
+# Install kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s \
+  https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+
+# Fix jenkins user permissions
+sudo mkdir -p /var/lib/jenkins/.kube
+sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube
+
+# Restart Jenkins
+sudo systemctl restart jenkins
+
+# Verify
+kubectl version --client
+aws --version
+
+
+
+
+
+
+
+
+Default home directory for Jenkins?
+
+/var/lib/Jenkins
+
+------------------------------------
+Different types of build triggers?
+
+
+
+Project structure with pom.xml
+
+my-app/
+├── pom.xml                        ← Maven config (mandatory)
+├── Jenkinsfile
+├── Dockerfile
+├── k8s/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   └── ingress.yaml
+└── src/
+    ├── main/
+    │   ├── java/
+    │   │   └── com/mycompany/
+    │   │       └── Application.java
+    │   └── resources/
+    │       └── application.properties
+    └── test/
+        └── java/
+            └── com/mycompany/
+                └── ApplicationTest.java
+
+
+
+Full flow in Jenkins
+
+
+pom.xml                Jenkinsfile
+   ↓                       ↓
+defines             stage('Build')
+dependencies    →     mvn clean package
+and build               ↓
+config            target/my-app.jar created
+                        ↓
+                  stage('Docker Build')
+                    docker build
+                    COPY target/*.jar  ← uses jar from pom.xml
+                        ↓
+                  Docker image ready
+
+
+
+
+----------------
+GitHub Actions
+
+Go to your pipeline repo first:
+
+Before that — add secrets in Settings → Secrets → Actions:
+
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+
+Go to github.com/kamalesh-parthiban/pipeline
+Click Settings tab (inside the repo)
+Left sidebar → Secrets and variables → Actions
+Click New repository secret
+
+You're in the right place! Now:
+
+1. Click "Secrets and variables" on the left sidebar
+2. Click "Actions"
+3. Click "New repository secret"
+
+Add these 2 secrets:
+
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+
+1. Click kamalesh-parthiban/pipeline from the left side
+2. Inside the repo click Actions tab (top menu)
+3. Click New workflow or set up a workflow yourself
+4. It will create .github/workflows/ folder automatically
+5. Paste your deploy.yml content there and click Commit
+
+For GitHub Actions, you don't need jenkinsfile anymore.
+
+
+.github/workflows/main.yml  ✅ needed
+src/                        ✅ needed
+.gitignore                  ✅ needed
+Dockerfile                  ✅ needed
+jenkinsfile                 ❌ not needed (Jenkins only)
+pom.xml                     ✅ needed
+
+
+
+we did both using jenkins and github actions what is the difference?
+
+
+|                   | Jenkins                      | GitHub Actions               |
+| ----------------- | ---------------------------- | ---------------------------- |
+| **Server**        | Needs EC2 server             | No server needed             |
+| **Cost**          | EC2 charges 24/7             | Free 2000 min/month          |
+| **Setup**         | Complex (install, configure) | Just a YAML file             |
+| **Maintenance**   | You manage updates, plugins  | GitHub manages everything    |
+| **Configuration** | Jenkinsfile                  | .github/workflows/main.yml   |
+| **Plugins**       | Manual install               | Built-in actions marketplace |
+| **Trigger**       | pollSCM every 5 min          | Instant on push              |
+
+
+Full CI/CD in one main.yml
+
+CI Part:                          CD Part:
+---------                         ---------
+Checkout code                     Pull image from ECR
+Build JAR          →              Deploy to ECS/EKS/EC2
+Run Tests                         App is live! 
+Build Docker image
+Push to ECR
+
+✅ GitHub Actions can do both CI and CD
+✅ Everything in one YAML file
+
+
+|             | Jenkins           | GitHub Actions    |
+| ----------- | ----------------- | ----------------- |
+| Age         | Old (2011)        | New (2018)        |
+| Trend       | Declining         | Growing           |
+| Jobs market | Still high demand | Increasing        |
+| Future      | Slowly replaced   | Industry standard |
+
+-----------------------------------------------------------------------------------------------------
+
+Different types of build triggers?
+
+1. Build Periodically
+2. GitHub Hook Trigger
+3. Poll SCM
+4. Build After Other Projects
+
+
+Jenkins Build Triggers – Simple Interview Answer
+1. Build Periodically
+Like a alarm clock – builds at a fixed time, no matter what.
+
+"Run every night at 2 AM" — good for nightly reports or cleanup jobs.
+
+
+2. GitHub Hook Trigger - Then in GitHub → Repo Settings → Webhooks add:
+http://jenkinsip:8080/github-webhook/
+
+Instant build on push. Best & most common for GitHub projects.
+
+
+3. Poll SCM
+Like checking your phone every 5 mins for new messages instead of waiting for a notification.
+
+Jenkins keeps asking GitHub "anything new?" — works but wastes resources.
+
+
+4. Build After Other Projects
+Like a relay race – one job finishes, the next one starts automatically.
+
+Used to chain jobs: Build → Test → Deploy.
+
+
+
+----------------------------------------
+🔷 Pipeline Declaration
+
+
+pipeline {
+    agent any
+
+
+pipeline {} → This is the start of a Jenkins declarative pipeline
+agent any → Run this pipeline on any available Jenkins agent/node
+
+-----------
+🔷 Environment Variables
+
+environment {
+        AWS_REGION       = "us-east-2"                                         // Change to your AWS region
+        AWS_ACCOUNT_ID   = "382458445256"                                     // Change to your AWS Account ID
+        ECR_REPO_NAME    = "pipeline"                                        // ECR repository name
+        ECR_REGISTRY     = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"       // Full ECR URL (auto-built from above values)
+        IMAGE_NAME       = "${ECR_REGISTRY}/${ECR_REPO_NAME}"                         // Full Docker image path = registry/repo
+        DOCKER_TAG       = "${BUILD_NUMBER}"                                          // Uses Jenkins build number as image tag (e.g., :5, :6)
+        AWS_CRED         = "aws-credentials-id"                                   // Jenkins AWS credential ID
+    }
+
+
+-------------------------------------
+🔷 Tools
+
+
+tools {
+    maven 'Maven-3.9'
+    jdk   'JDK-17'
+}
+
+
+Tells Jenkins to use Maven 3.9 and JDK 17
+These names must match exactly what's configured in Jenkins → Global Tool Configuration
+
+-------------------------------------------
+
+🔷 Trigger
+
+triggers {
+    pollSCM('H/5 * * * *')
+}
+
+Jenkins checks GitHub every 5 minutes for new commits
+If new code is found → build starts automatically
+
+
+
+Option 2: GitHub Webhook (Recommended)
+
+
+triggers {
+    githubPush()
+}
+
+
+GitHub push a notification to Jenkins instantly when code is pushed.
+Then in GitHub → Repo Settings → Webhooks add:
+http://<your-jenkins-url>/github-webhook/
+Instant trigger, no polling, no wasted resources ✅
+
+
+Option 3: Build Periodically (Cron)
+
+Run at a fixed time regardless of code changes:
+
+triggers {
+    cron('0 2 * * *')   // every night at 2 AM
+}
+----------------------------------------------------
+🔷 Stage 1 – Checkout
+
+stage('Checkout') {
+    steps {
+        echo "Checking out from GitHub..."         
+        git branch: 'main',
+            url: 'https://github.com/kamalesh-parthiban/pipeline.git'
+    }
+}
+
+echo → Just prints a message in the console log
+git branch: 'main' → Pull code from the main branch
+url → Your GitHub repository link
+
+
+
+-------
+🔷 Stage 2 – Build
+
+
+stage('Build') {
+    steps {
+        sh 'mvn clean package -DskipTests'
+    }
+    post {
+        success {
+            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+        }
+    }
+}
+
+
+mvn clean package → Compile code and create a JAR file
+-DskipTests → Skip tests during build (tests run separately)
+archiveArtifacts → Save the JAR file in Jenkins for download
+fingerprint: true → Jenkins tracks which build produced which JAR
+-----------
+
+🔷 Stage 3 – Test
+
+
+stage('Test') {
+    steps {
+        sh 'mvn test'
+    }
+    post {
+        always {
+            junit 'target/surefire-reports/*.xml'
+        }
+    }
+}
+
+mvn test → Run all unit tests
+junit → Publish test results in Jenkins dashboard
+always → Publish results whether tests pass or fail
+
+---------------
+🔷 Stage 4 – Docker Build
+
+stage('Docker Build') {
+    steps {
+        sh """
+            docker build -t ${IMAGE_NAME}:${DOCKER_TAG} .
+            docker tag ${IMAGE_NAME}:${DOCKER_TAG} ${IMAGE_NAME}:latest
+        """
+    }
+}
+
+docker build → Build Docker image from your Dockerfile
+-t → Tag the image with build number (e.g., pipeline:5)
+docker tag ... :latest → Also tag same image as latest
+Now you have two tags for the same image: :5 and :latest
+
+-------------------------------
+
+Stage 5 – Push to ECR
+
+stage('Push to ECR') {
+    steps {
+        withCredentials([[
+            $class: 'AmazonWebServicesCredentialsBinding',
+            credentialsId: "${AWS_CRED}",
+            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+        ]]) {
+
+
+withCredentials → Securely injects AWS keys from Jenkins credentials store
+$class → Tells Jenkins this is an AWS type credential
+accessKeyVariable / secretKeyVariable → Maps AWS keys to environment variables
+
+-------------------------------------
+Jenkins doesn't care about uppercase or lowercase in stage names — it just displays whatever you write in the UI.
+
+| Thing                      | Jenkins cares?   |
+| -------------------------- | ---------------- |
+| Spaces before {            | ❌ No             |
+| Indentation amount         | ❌ No             |
+| New line vs same line      | ❌ No             |
+| Extra spaces between words | ❌ No             |
+| Brackets open & close      | ✅ Yes — strictly |
+| Correct block order        | ✅ Yes — strictly |
+
+
+mvn clean package this does test also right then no need mvn test i think?
+
+Yes! You are 100% correct!
+
+mvn clean package already runs tests
+
+mvn clean package
+      ↓
+  clean → compile → test → package
+                     ↑
+              tests run here automatically!
+So running mvn test again separately is redundant — it runs tests twice!
+
+That's why we use -DskipTests
+-------
+The Build stage runs 'mvn clean package' which looks at these files:
+
+Files it uses:
+
+my-app/
+├── pom.xml                        ← #1 FIRST reads this (dependencies, build config)
+└── src/
+    ├── main/
+    │   ├── java/
+    │   │   └── com/mycompany/
+    │   │       └── Application.java     ← #2 compiles this
+    │   └── resources/
+    │       └── application.properties  ← #3 copies this to JAR
+    └── test/
+        └── java/
+            └── com/mycompany/
+                └── ApplicationTest.java ← #4 runs this (tests)
+
+What it does step by step:
+
+mvn clean   → deletes old target/ folder
+    ↓
+mvn package → reads pom.xml (dependencies)
+    ↓
+            → compiles Application.java
+    ↓
+            → copies application.properties
+    ↓
+            → runs ApplicationTest.java
+    ↓
+            → creates target/myapp.jar
+
+-------
+mvn
+
+mvn compile  
+
+Reads pom.xml
+      ↓
+Compiles Application.java
+      ↓
+Output: target/classes/
+
+Only converts .java → .class files. Nothing else.
+
+
+
+mvn test
+
+Compiles Application.java
+      ↓
+Compiles ApplicationTest.java
+      ↓
+Runs all tests
+      ↓
+Output: target/surefire-reports/
+
+Runs tests but does NOT create JAR.
+
+
+
+mvn package
+
+Compiles Application.java
+      ↓
+Compiles ApplicationTest.java
+      ↓
+Runs all tests
+      ↓
+Creates JAR file
+      ↓
+Output: target/myapp.jar
+
+Does everything — compile + test + JAR.
+
+
+
+That's why in Jenkinsfile we use:
+
+mvn clean package        # does everything
+mvn clean package -DskipTests   # skips tests (faster)
+
+mvn package includes compile and test automatically! 🚀
+
+------------------------------------------------------------
+docker build -t myapp:${BUILD_NUMBER}
+
+docker build          → build the image
+-t                    → tag/name the image
+myapp:${BUILD_NUMBER} → name:tag  (e.g. myapp:7)
+.                     → look for Dockerfile in current folder
+
+What it does:
+
+Reads Dockerfile
+      ↓
+Takes your myapp.jar
+      ↓
+Creates a Docker image
+      ↓
+Stores it LOCALLY on Jenkins EC2
+
+
+docker push myapp:${BUILD_NUMBER}
+
+Uploads that image to ECR:
+
+docker push           → upload the image
+myapp:${BUILD_NUMBER} → which image to upload
+
+What it does:
+
+Takes local Docker image
+      ↓
+Uploads to ECR registry
+      ↓
+Image available for deployment
+
+
+docker build  →  Cook a meal (create image locally)
+docker push   →  Put it in fridge (store in ECR)
+docker pull   →  Take from fridge (download from ECR)
+docker run    →  Eat the meal (run the container)
+--------------------------------------------------------------------------------------
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/example/app.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t myapp:${BUILD_NUMBER} .'
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                sh 'docker push myapp:${BUILD_NUMBER}'
+            }
+        }
+
+        stage('Deploy to K8s') {
+            steps {
+                sh 'kubectl apply -f deployment.yaml'
+            }
+        }
+    }
+}
+
+---------------------------------------
+in both synk and sonarqube for security scan?
+
+Yes both do security scanning but different types:
+
+Snyk → scans DEPENDENCIES
+
+Your pom.xml has:
+spring-boot 2.5.0  ← old version, has vulnerability!
+      ↓
+Snyk checks online database
+      ↓
+"This library has CVE-2021-1234 vulnerability!"
+      ↓
+Suggests: upgrade to spring-boot 2.7.0
+
+Snyk looks at your libraries/packages — not your code!
+
+
+
+SonarQube → scans YOUR CODE
+
+
+Your Application.java has:
+String query = "SELECT * FROM users WHERE id=" + userId;
+      ↓
+SonarQube detects
+      ↓
+"SQL Injection vulnerability in line 45!"
+      ↓
+Developer must fix the code
+
+
+SonarQube looks at your actual code — not libraries!
+
+
+Simple analogy:
+
+Your Car:
+Snyk       → checks if spare parts are faulty    (libraries)
+SonarQube  → checks if engine is built correctly  (your code)
+
+
+In real companies — both are used:
+
+Snyk      → "your libraries are safe" ✅
+SonarQube → "your code is clean" ✅
+Both pass → pipeline continues 🚀
+
+|       | Snyk                    | SonarQube                |
+| ----- | ----------------------- | ------------------------ |
+| Scans | pom.xml dependencies    | Your Java code           |
+| Finds | Vulnerable libraries    | SQL injection, XSS, bugs |
+| Fixes | Upgrade library version | Fix your code            |
+| Type  | Dependency scanning     | Static code analysis     |
+
+
+----------------------------
+
+Types of Nodes:
+
+Jenkins Master (Controller)
+      ↓
+├── Master Node    → manages Jenkins, schedules jobs
+└── Agent Nodes    → actually runs the pipeline/jobs
+
+Master Node:
+
+✅ Manages Jenkins UI
+✅ Schedules builds
+✅ Stores configurations
+✅ Distributes jobs to agents
+❌ Should NOT run builds (bad practice)
+
+Agent Node:
+
+✅ Actually runs the pipeline
+✅ Can be Linux, Windows, Mac
+✅ Multiple agents = parallel builds
+✅ Can have different tools installed
+
+In your Jenkinsfile:
+
+agent any              // any available node
+agent none             // no default agent
+agent { label 'linux'} // specific node with label
+agent { docker 'maven'}// run inside docker container
+
+
+Why multiple nodes:
+
+Master
+  ├── Agent 1 (Linux)   → runs Java builds
+  ├── Agent 2 (Windows) → runs .NET builds
+  └── Agent 3 (Linux)   → runs Python builds
+
+3 jobs can run SIMULTANEOUSLY! 🚀
+
+
+How to add a Node:
+Manage Jenkins → Manage Nodes → New Node
+
+Node name: agent-1
+Type: Permanent Agent
+Remote directory: /home/jenkins
+Launch method: SSH
+Host: agent EC2 IP
+
+
+|        | Master          | Agent       |
+| ------ | --------------- | ----------- |
+| Role   | Manages Jenkins | Runs builds |
+| UI     | Yes             | No          |
+| Builds | Not recommended | Yes         |
+| Count  | 1               | Many        |
+
+do we need sperate linux mission for agent nodes?
+
+Yes! Each agent node needs a separate machine.
+
+Master EC2 (t2.medium)
+      ↓
+├── Agent EC2 1 (t3.large)  ← separate EC2
+├── Agent EC2 2 (t3.large)  ← separate EC2
+└── Agent EC2 3 (t3.large)  ← separate EC2
+
+✅ Most common in real companies
+💰 Costs money (running 24/7)
+
+
+---------------
+Users and Security in Jenkins
+
+Default Setup (Not Secure ❌)
+
+Fresh Jenkins install
+      ↓
+Anyone can access
+Anyone can run builds
+Anyone can change config
+
+
+Enable Security:
+Manage Jenkins → Security → Configure Global Security
+
+✅ Enable Security
+✅ Jenkins own user database
+✅ Logged in users can do anything
+      OR
+✅ Role based strategy (recommended)
+
+
+Types of Users:
+
+Admin
+  ├── Full access
+  ├── Manage plugins
+  ├── Create/delete jobs
+  └── Manage users
+
+Developer
+  ├── View jobs
+  ├── Trigger builds
+  └── View logs
+
+Read Only
+  └── Only view jobs/logs
+
+
+
+Create Users:
+Manage Jenkins → Users → Create User
+
+Username:  developer1
+Password:  xxxxxxxx
+Full name: John Dev
+Email:     john@company.com
+
+
+Role Based Access (Recommended):
+First install plugin:
+
+
+Manage Jenkins → Plugins → 
+search "Role-based Authorization Strategy"
+→ Install
+
+
+Then create roles:
+
+
+Manage Jenkins → Security → 
+Manage and Assign Roles
+      ↓
+Create Roles:
+├── admin-role    → all permissions
+├── dev-role      → build, view
+└── readonly-role → view only
+
+
+Assign Roles to Users:
+
+john@company.com  → dev-role
+jane@company.com  → admin-role
+bob@company.com   → readonly-role
+
+-------------------------
+Matrix Based Security in Jenkins
+
+A table/matrix where you:
+├── Rows    = Users
+└── Columns = Permissions
+
+How it looks:
+
+User          | Build | View | Configure | Delete | Admin
+------------- |-------|------|-----------|--------|------
+Anonymous     |  ❌   |  ✅  |    ❌     |   ❌   |  ❌
+john(dev)     |  ✅   |  ✅  |    ❌     |   ❌   |  ❌
+jane(lead)    |  ✅   |  ✅  |    ✅     |   ✅   |  ❌
+admin         |  ✅   |  ✅  |    ✅     |   ✅   |  ✅
+
+
+How to enable:
+
+Manage Jenkins 
+      ↓
+Security
+      ↓
+Authorization
+      ↓
+Select "Matrix-based security"
+
+
+|                 | Matrix Based         | Role Based              |
+| --------------- | -------------------- | ----------------------- |
+| **Setup**       | Per user permissions | Group roles then assign |
+| **Best for**    | Small teams          | Large teams             |
+| **Manage**      | Hard (many users)    | Easy (manage roles)     |
+| **Flexibility** | High                 | Medium                  |
+
+
