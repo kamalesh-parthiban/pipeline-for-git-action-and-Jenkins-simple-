@@ -288,3 +288,44 @@ Post actions:
    always runs regardless
    of success or failure"
 ------------------------------------------------------------
+Stage 1: Checkout
+Stage 2: Build (JAR created) ✅
+Stage 3: Test
+Stage 4: SonarQube Scan      ← needs compiled code ✅
+Stage 5: Snyk Scan
+Stage 6: Docker Build
+Stage 7: Push to ECR
+Stage 8: Deploy
+
+SonarQube — Why After Build (mvn)
+
+SonarQube scans:
+  ✅ compiled Java code
+  ✅ test coverage reports
+  ✅ code quality issues
+  ✅ bugs and vulnerabilities
+
+Needs:
+  ✅ compiled .class files
+  ✅ test results
+  ✅ JAR already built
+
+Cannot scan:
+  ❌ before build
+  ❌ needs compiled code
+  ❌ not just source code
+
+Snyk — Why Scan pom.xml
+
+Snyk scans:
+  ✅ pom.xml dependencies
+  ✅ finds vulnerable libraries
+  ✅ example:
+     log4j vulnerability ❌
+     spring security bug ❌
+
+Scans BEFORE Docker build:
+  ✅ catch issues early
+  ✅ no point building Docker
+     if dependencies vulnerable ❌
+  ✅ fail fast ✅
