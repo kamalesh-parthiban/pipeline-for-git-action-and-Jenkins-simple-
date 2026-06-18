@@ -1,0 +1,74 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+# source      = . → your local machine current folder
+#                   everything in it
+# destination = . → current WORKDIR inside container
+#                   which is /app
+
+# Same as: COPY . /app         # explicit version ✅
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+
+
+----------
+Pipeline for this:
+
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/example/app.git'
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t myapp:${BUILD_NUMBER} .'
+            }
+        }
+        stage('Push Image') {
+            steps {
+                sh 'docker push myapp:${BUILD_NUMBER}'
+            }
+        }
+        stage('Deploy to K8s') {
+            steps {
+                sh 'kubectl apply -f deployment.yaml'
+            }
+        }
+    }
+}
+----------------------------------------
+No Build stage — because npm install happens inside Docker via RUN npm install, not in the pipeline.
+
+Java vs Node comparison:
+
++-------------+--------------------------------------+---------------------------+
+|             | Java (Maven)                         | Node.js                   |
++-------------+--------------------------------------+---------------------------+
+| Build step  | mvn clean package in pipeline        | npm install inside        |
+|             |                                      | Dockerfile                |
++-------------+--------------------------------------+---------------------------+
+| Output      | target/app.jar                       | node_modules + source     |
++-------------+--------------------------------------+---------------------------+
+| Base image  | eclipse-temurin:21-jre              | node:20-alpine            |
++-------------+--------------------------------------+---------------------------+
+| Port        | 8080                                 | 3000                      |
++-------------+--------------------------------------+---------------------------+
+| Start cmd   | java -jar app.jar                    | npm start                 |
++-------------+--------------------------------------+---------------------------+
+
+Why COPY package*.json ./ first?
+
+Docker layer caching:
+- If only source code changes, Docker skips npm install
+  and reuses the cached layer.
+- This results in faster builds.
