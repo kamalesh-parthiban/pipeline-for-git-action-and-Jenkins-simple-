@@ -1,0 +1,70 @@
+What are shared libraries in Jenkins and why are they used in large-scale CI/CD setups?
+
+Jenkins Shared Libraries are reusable Groovy code stored in a Git repo that multiple pipelines can import and use. In large scale setups 
+like managing 400+ microservices, they eliminate code duplication, enforce consistency, and allow a single fix to propagate across 
+all pipelines instantly.
+
+Without Shared Library:
+  Pipeline A → copy paste same code
+  Pipeline B → copy paste same code
+  Pipeline C → copy paste same code
+  → 400 pipelines = 400 duplicate codes ❌
+  → Change one thing = update 400 files ❌
+
+With Shared Library:
+  Common code → ONE place (Git repo)
+  Pipeline A → calls shared library
+  Pipeline B → calls shared library
+  Pipeline C → calls shared library
+  → Change one thing = all 400 updated ✅
+--------------
+
+Simple Analogy
+
+Shared Library = Python pip package / Java Maven dependency
+
+Just like:
+  import boto3          ← reusable library
+  import requests       ← reusable library
+
+In Jenkins:
+  @Library('my-shared-lib')   ← reusable pipeline code
+
+---------------
+Folder Structure of Shared Library
+
+jenkins-shared-library/        ← Git repo
+      │
+      ├── vars/                ← Global functions (most used)
+      │     ├── dockerBuild.groovy
+      │     ├── deployToEKS.groovy
+      │     ├── sendSlackAlert.groovy
+      │     └── runTerraform.groovy
+      │
+      ├── src/                 ← Classes (advanced)
+      │     └── com/company/
+      │           ├── Docker.groovy
+      │           └── Kubernetes.groovy
+      │
+      └── resources/           ← Static files
+            └── scripts/
+                  └── health-check.sh
+
+Your Context at GlobalPayments
+
+You manage 400+ microservices
+Each has a Jenkinsfile
+
+Without shared library:
+  400 Jenkinsfiles with duplicate
+  docker build, kubectl apply,
+  slack notification code ❌
+
+With shared library (luigi-shared-library):
+  400 Jenkinsfiles just call:
+  dockerBuild()
+  deployToEKS()
+  sendSlackAlert()
+  → All standardized ✅
+  → Your company already uses this! ✅
+
