@@ -67,4 +67,116 @@ With shared library (luigi-shared-library):
   sendSlackAlert()
   → All standardized ✅
   → Your company already uses this! ✅
+----------------
+Here's your exact pipeline converted to use shared library:
+
+Step 1 — Create Shared Library Repo
+
+jenkins-shared-library/
+      ├── vars/
+      │     ├── checkoutCode.groovy
+      │     ├── buildMaven.groovy
+      │     ├── dockerBuild.groovy
+      │     ├── dockerPush.groovy
+      │     └── deployToK8s.groovy
+
+Step 2 — Write Shared Library Functions
+
+// vars/checkoutCode.groovy
+def call(String repoUrl) {
+    git repoUrl
+    echo "✅ Code checked out from ${repoUrl}"
+}
+
+// vars/buildMaven.groovy
+def call() {
+    sh 'mvn clean package'
+    echo "✅ Maven build done"
+}
+
+// vars/dockerBuild.groovy
+def call(String imageName, String tag) {
+    sh "docker build -t ${imageName}:${tag} ."
+    echo "✅ Docker image built: ${imageName}:${tag}"
+}
+
+// vars/dockerPush.groovy
+def call(String imageName, String tag) {
+    sh "docker push ${imageName}:${tag}"
+    echo "✅ Docker image pushed: ${imageName}:${tag}"
+}
+
+// vars/deployToK8s.groovy
+def call(String manifest) {
+    sh "kubectl apply -f ${manifest}"
+    echo "✅ Deployed to Kubernetes"
+}
+
+Step 3 — Your Jenkinsfile 
+
+After — With Shared Library ✅
+
+@Library('jenkins-shared-lib@main') _    // import shared library
+
+pipeline {
+    agent any
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkoutCode('https://github.com/example/app.git')  // ← shared function
+            }
+        }
+
+        stage('Build') {
+            steps {
+                buildMaven()                                          // ← shared function
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dockerBuild('myapp', "${BUILD_NUMBER}")               // ← shared function
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                dockerPush('myapp', "${BUILD_NUMBER}")                // ← shared function
+            }
+        }
+
+        stage('Deploy to K8s') {
+            steps {
+                deployToK8s('deployment.yaml')                        // ← shared function
+            }
+        }
+    }
+}
+
+What Changed
+
+Before:                          After:
+─────────────────────────        ─────────────────────────
+sh 'mvn clean package'    →      buildMaven()
+sh 'docker build ...'     →      dockerBuild('myapp', tag)
+sh 'docker push ...'      →      dockerPush('myapp', tag)
+kubectl apply ...         →      deployToK8s('deployment.yaml')
+
+All logic lives in         →     Jenkinsfile is clean
+Jenkinsfile                      and simple
+-----------------------------------------------------
+
+Benefit for Your 400 Microservices
+
+400 repos → each has simple Jenkinsfile
+                 calls same shared functions
+
+Tomorrow docker build command changes:
+  → Update ONE file (vars/dockerBuild.groovy)
+  → All 400 pipelines get update ✅
+  → No need to touch 400 Jenkinsfiles ✅
+-------------------------------------------
+
+
 
