@@ -23,6 +23,10 @@ Scans your Java source code for security vulnerabilities like SQL injection, har
 Sysdig
 Scans the built OCI container image sitting in ECR for vulnerabilities. Catches issues that only appear at the image/runtime level — OS packages, base image CVEs — not visible in source code.
 
+OCI — Open Container Initiative
+OCI = the standard format that Docker, Podman, containerd all follow to package and run containers.
+Your Docker image  →  follows OCI spec  →  runs on any OCI-compatible runtime
+
 pipeline {
     agent any
     stages {
