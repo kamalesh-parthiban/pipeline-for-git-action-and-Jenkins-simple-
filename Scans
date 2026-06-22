@@ -102,6 +102,12 @@ composed of:
 ├── guava 31.0
 └── commons-io 2.11.0
 
+What is Log4j?
+Log4j is a Java logging library — it's used to record log messages in Java applications.
+
+Log4j is like a flight data recorder (black box) for Java apps — every event, error, 
+and transaction gets written so you can debug issues later.
+
 What Snyk SCA does:
 
 Scans your pom.xml / package.json / requirements.txt
