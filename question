@@ -66,8 +66,10 @@ Day 1 → 1.0.0-SNAPSHOT (has login feature)
 Day 2 → 1.0.0-SNAPSHOT (added payment feature)  ← same version, different code
 Day 3 → 1.0.0-SNAPSHOT (fixed auth bug)          ← same version, different code
 ----------------------------------------
-RELEASE Version
+RELEASE Version for java jar 
 
+<!-- pom.xml -->
+<artifactId>myapp</artifactId>
 <version>1.0.0</version>
 
 Development complete
@@ -79,3 +81,17 @@ Maven downloads once and caches forever
 1.1.0  → new release with new features
 1.2.0  → another release
 ----------------------------------------------
+
+How do you ensure the correct Docker image tag gets deployed?
+
+        stage('Push Image') {
+            steps {
+                sh 'docker push myapp:${BUILD_NUMBER}'
+            }
+        }
+
+Build number
+
+Build 1 → myapp:1
+Build 2 → myapp:2
+Build 3 → myapp:3
