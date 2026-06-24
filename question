@@ -95,3 +95,14 @@ Build number
 Build 1 → myapp:1
 Build 2 → myapp:2
 Build 3 → myapp:3
+-------------------------
+
+How do you dynamically update deployment.yaml from Jenkins?
+
+using build with parameter we can  dynamically update deployment.yaml 
+
+UI form → you select ENV=uat, type IMAGE_TAG=v1.0.0
+                │
+                ▼
+        params.ENV      = uat
+        params.IMAGE_TAG = v1.0.0
