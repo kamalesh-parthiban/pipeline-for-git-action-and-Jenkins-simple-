@@ -1,2 +1,316 @@
 Difference between Build Now and Build with Parameters?
 
+Build Now — runs immediately with default/hardcoded values, no user input, no form shown.
+
+Build with Parameters — shows a form before running where you fill ENV, IMAGE_TAG etc., 
+pipeline uses ${params.ENV} to decide which cluster, which ECR, which namespace to deploy to.
+
+One repo, one Jenkinsfile, one deployment.yaml — two environments
+
+GitHub repo (single source of truth)
+    ├── Jenkinsfile        ← same pipeline for both
+    ├── Dockerfile         ← same image build for both
+    ├── deployment.yaml    ← same manifest, placeholders replaced at runtime
+    └── src/               ← same code for both
+
+What changes at runtime — not in Git
+
+Build with Parameters
+        │
+        ├── ENV = uat
+        │       │
+        │       ├── aws-creds-uat        → 111111111111 ECR
+        │       ├── IMAGE_PLACEHOLDER    → 111111111111.dkr.ecr.../myapp:v1.0.0
+        │       ├── ENV_PLACEHOLDER      → uat
+        │       └── kubectl              → uat-cluster, namespace uat
+        │
+        └── ENV = prod
+                │
+                ├── aws-creds-prod       → 222222222222 ECR
+                ├── IMAGE_PLACEHOLDER    → 222222222222.dkr.ecr.../myapp:v1.0.0
+                ├── ENV_PLACEHOLDER      → prod
+                └── kubectl              → prod-cluster, namespace prod
+
+Typical release flow using this setup
+
+Dev pushes code to GitHub
+        │
+        ▼
+Jenkins → Build with Parameters → ENV=uat → Build
+        │
+        ▼
+UAT team tests
+        │
+        ▼
+UAT sign off ✅
+        │
+        ▼
+Jenkins → Build with Parameters → ENV=prod → same IMAGE_TAG → Build
+        │
+        ▼
+Prod Approval gate → manager clicks Approve
+        │
+        ▼
+Same image promoted to PROD cluster
+----------------------------------
+
+Step by step — store AWS credentials in Jenkins
+
+Jenkins UI →
+  Manage Jenkins →
+    Credentials →
+      System →
+        Global credentials →
+          Add Credentials
+
+            ┌─────────────────────────────────────┐
+            │ Kind:     Secret text                │
+            │ Secret:   AKIAIOSFODNN7EXAMPLE       │
+            │ ID:       aws-access-key-uat         │
+            │ Desc:     UAT AWS Access Key         │
+            └─────────────────────────────────────┘
+
+            ┌─────────────────────────────────────┐
+            │ Kind:     Secret text                │
+            │ Secret:   wJalrXUtnFEMI/K7MDENG     │
+            │ ID:       aws-secret-key-uat         │
+            │ Desc:     UAT AWS Secret Key         │
+            └─────────────────────────────────────┘
+
+            ┌─────────────────────────────────────┐
+            │ Kind:     Secret text                │
+            │ Secret:   AKIAI44QH8DHBEXAMPLE       │
+            │ ID:       aws-access-key-prod        │
+            │ Desc:     PROD AWS Access Key        │
+            └─────────────────────────────────────┘
+
+            ┌─────────────────────────────────────┐
+            │ Kind:     Secret text                │
+            │ Secret:   je7MtGbClwBF/2Zp9Utk      │
+            │ ID:       aws-secret-key-prod        │
+            │ Desc:     PROD AWS Secret Key        │
+            └─────────────────────────────────────┘
+
+Why no separate ECR credential needed
+
+aws ecr get-login-password   ← uses AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY
+        │
+        ▼
+returns a temporary docker token (valid 12 hours)
+        │
+        ▼
+docker login --password-stdin   ← uses that token
+        │
+        ▼
+docker push to ECR   ← authenticated
+
+------------------------------------
+So aws-creds-uat and aws-creds-prod you already created — those are your ECR credentials too. Nothing extra to store.
+--------
+Single quotes in sh don't expand variables — switch to double quotes or triple-quote sh \"\"\". Then pass ${params.ENV} to --namespace and kubectl config use-context so the same stage deploys to UAT or PROD based on what was selected at build time. 
+Add a when { expression { params.ENV == 'prod' } } approval stage before deploy for safety.
+------
+
+-------------------------------
+In Jenkins UI
+
+Jenkins Dashboard
+    → left sidebar → "New Item"
+
+Enter an item name:  myapp-deploy-pipeline
+
+Select:  Pipeline    ← click this tile
+
+Click:   OK
+
+Description:  Deploy myapp to UAT or PROD EKS cluster
+
+✅ check "This project is parameterized"
+        │
+        ▼
+"Add Parameter" button appears
+
+Click "Add Parameter" → Choice Parameter
+
+    Name:        ENV
+    Choices:     uat        ← one per line
+                 prod
+    Description: Target environment
+
+Click "Add Parameter" → String Parameter
+
+    Name:          IMAGE_TAG
+    Default Value: latest
+    Description:   Docker image tag to deploy
+
+✅ GitHub hook trigger for GITScm polling
+        ← auto triggers pipeline when code pushed to GitHub
+        ← skip this for now if triggering manually
+
+Job page → left sidebar
+    → "Build with Parameters"
+            │
+            ▼
+    ┌─────────────────────────────┐
+    │  ENV        [ uat  ▼ ]      │
+    │  IMAGE_TAG  [ latest    ]   │
+    └─────────────────────────────┘
+            │
+            ▼
+    click "Build"
+
+┌─────────────────────────────────┐
+│  ENV        [ uat  ▼ ]          │
+│  IMAGE_TAG  [ latest        ]   │  ← just clear and type anything
+└─────────────────────────────────┘
+
+You can type:
+
+latest
+v1.0.0
+v1.2.3
+2.0.0
+feature-login
+hotfix-payment
+20240624-01
+${BUILD_NUMBER}   ← not this — this is for Jenkinsfile only
+
+Whatever you type becomes params.IMAGE_TAG inside the pipeline.
+
+How it flows
+
+IMAGE_TAG = v1.2.3
+        │
+        ▼
+FULL_IMAGE = 111111111111.dkr.ecr.ap-south-1.amazonaws.com/myapp:v1.2.3
+        │
+        ├── docker build -t ...myapp:v1.2.3
+        ├── docker push  ...myapp:v1.2.3
+        └── sed IMAGE_PLACEHOLDER → ...myapp:v1.2.3
+--------------------------------------
+
+
+pipeline {
+    agent any
+
+    // NO parameters{} block — defined in UI Configure page
+
+    environment {
+        AWS_REGION   = 'ap-south-1'
+        IMAGE_NAME   = 'myapp'
+        ECR_UAT      = '111111111111.dkr.ecr.ap-south-1.amazonaws.com'
+        ECR_PROD     = '222222222222.dkr.ecr.ap-south-1.amazonaws.com'
+        ECR_REGISTRY = "${params.ENV == 'prod' ? ECR_PROD : ECR_UAT}"
+        FULL_IMAGE   = "${ECR_REGISTRY}/${IMAGE_NAME}:${params.IMAGE_TAG}"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git credentialsId: 'github-creds',
+                    url: 'https://github.com/example/app.git',
+                    branch: 'main'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                withCredentials([
+                    aws(credentialsId: "aws-creds-${params.ENV}",
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh """
+                        aws ecr get-login-password --region ${AWS_REGION} | \
+                        docker login --username AWS \
+                                     --password-stdin ${ECR_REGISTRY}
+
+                        docker build -t ${FULL_IMAGE} .
+                        docker push ${FULL_IMAGE}
+                    """
+                }
+            }
+        }
+
+        stage('Prod Approval') {
+            when {
+                expression { params.ENV == 'prod' }
+            }
+            steps {
+                input message: "Deploy ${FULL_IMAGE} to PROD?", ok: 'Approve'
+            }
+        }
+
+        stage('Deploy to K8s') {
+            steps {
+                withCredentials([
+                    aws(credentialsId: "aws-creds-${params.ENV}",
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh """
+                        aws eks update-kubeconfig \
+                          --region ${AWS_REGION} \
+                          --name ${params.ENV}-cluster
+
+                        sed -i 's|IMAGE_PLACEHOLDER|${FULL_IMAGE}|g' deployment.yaml
+                        sed -i 's|ENV_PLACEHOLDER|${params.ENV}|g'   deployment.yaml
+
+                        echo "=== Final deployment.yaml ==="
+                        cat deployment.yaml
+                        echo "=============================="
+
+                        kubectl apply -f deployment.yaml \
+                          --namespace ${params.ENV}
+
+                        kubectl rollout status deployment/myapp \
+                          --namespace ${params.ENV} \
+                          --timeout=5m
+                    """
+                }
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo "✅ ${FULL_IMAGE} deployed to ${params.ENV}"
+        }
+        failure {
+            withCredentials([
+                aws(credentialsId: "aws-creds-${params.ENV}",
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
+            ]) {
+                sh """
+                    aws eks update-kubeconfig \
+                      --region ${AWS_REGION} \
+                      --name ${params.ENV}-cluster
+
+                    kubectl rollout undo deployment/myapp \
+                      --namespace ${params.ENV} || true
+                """
+            }
+            echo "❌ Deploy failed — rolled back ${params.ENV}"
+        }
+        always {
+            sh "docker rmi ${FULL_IMAGE} || true"
+        }
+    }
+}
+
+
+
+
+
+
+
+
