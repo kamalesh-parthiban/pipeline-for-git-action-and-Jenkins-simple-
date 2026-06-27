@@ -40,7 +40,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/example/app.git'
+                git 'https://github.com/example/app.git'  // clone this repo
             }
         }
 
