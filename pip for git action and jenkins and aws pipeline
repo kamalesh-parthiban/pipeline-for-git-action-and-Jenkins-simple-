@@ -69,7 +69,42 @@ pipeline {
         }
     }
 }
+    post {
+        success {
+            echo "✅ Build #${BUILD_NUMBER} deployed to K8s successfully!"
+            echo "✅ Image: ${IMAGE_NAME}:${DOCKER_TAG}"
+        }
+        failure {
+            echo "❌ Build #${BUILD_NUMBER} failed. Check the logs."
+        }
+        always {              // runs no matter what (pass or fail)
+            sh """
+                docker rmi ${IMAGE_NAME}:${DOCKER_TAG} || true
+                docker rmi ${IMAGE_NAME}:latest || true
+            """
+            cleanWs()
+        }
+    }
+}
 
+--
+What cleanWs() deletes:
+
+/var/lib/jenkins/workspace/job-name/
+ ├── src/                    ✅ deleted (cloned code)
+ ├── target/                 ✅ deleted (build output)
+ ├── Dockerfile              ✅ deleted
+ ├── pom.xml                 ✅ deleted
+ └── any other files         ✅ deleted
+
+Line by line explanation:
+
+Line                                              | What it does
+--------------------------------------------------|--------------------------------------------------------------
+docker rmi ${IMAGE_NAME}:${DOCKER_TAG}            | Delete Docker image with the specific tag from the Jenkins server.
+docker rmi ${IMAGE_NAME}:latest                   | Delete Docker image with the latest tag from the Jenkins server.
+|| true                                           | If the image is not found or deletion fails, do not fail the build; continue execution.
+cleanWs()                                         | Delete the entire Jenkins workspace (cloned code, build files).
 -------------------
 version: 0.2
 
